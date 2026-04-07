@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run lint)",
+      "Bash(npm run test *)",
+      "Bash(npm run build)",
+      "Bash(git diff *)",
+      "Bash(gh issue *)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Bash(rm -rf *)",
+      "Bash(git push --force *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": "Bash",
+      "hooks": [{ "type": "command", "command": ".claude/hooks/pre-commit.sh" }]
+    }],
+    "PostToolUse": [{
+      "matcher": "Edit|Write",
+      "hooks": [{ "type": "command", "command": ".claude/hooks/lint-on-save.sh" }]
+    }]
+  },
+  "model": "claude-sonnet-4-6",
+  "autoMemoryEnabled": true
+}
