@@ -1,10 +1,13 @@
 ---
-name: frontend-design
-description: Apply my exact design standards to any UI
+name: schema-design
+description: Apply consistent Pydantic schema and data model design standards
 user-invocable: true
 ---
 
-Colors: #FF6B35 primary, #0A0A0F background, rgba(255,255,255,0.04) surfaces
-Typography: Inter, -0.02em tracking, 48-64px hero, 15-16px body
-Spacing: 64px sections, 24px card padding, 16px border radius
-Dark mode: Never flat black. Depth through gradients, glows, borders.
+Naming: `<Resource>Create`, `<Resource>Update`, `<Resource>Response` -- never reuse the same schema for input and output
+Base models: inherit from a shared `BaseSchema(BaseModel)` with `model_config = ConfigDict(from_attributes=True)`
+Validation: use `@field_validator` and `@model_validator` for cross-field constraints
+Optional fields: use `field: T | None = None` -- never bare `Optional[T]`
+IDs: expose `id: uuid.UUID` in responses, accept `id: uuid.UUID` in path params -- never expose internal DB int PKs
+Timestamps: always include `created_at: datetime` and `updated_at: datetime` in response schemas
+Enums: define as `class MyEnum(str, enum.Enum)` for JSON-serializable string enums

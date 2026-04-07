@@ -1,9 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run lint)",
-      "Bash(npm run test *)",
-      "Bash(npm run build)",
+      "Bash(pytest *)",
+      "Bash(ruff check *)",
+      "Bash(ruff format *)",
+      "Bash(mypy *)",
+      "Bash(alembic *)",
       "Bash(git diff *)",
       "Bash(gh issue *)"
     ],
