@@ -9,4 +9,7 @@ dist/
 *.log
 uploads/
 .superpowers/
-.worktrees/
+.worktrees/.pytest_cache/
+htmlcov/
+.coverage
+*.db
