@@ -6,6 +6,9 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
 from app.parsers.navi import NaviParser
+from app.parsers.phonepe import PhonePeParser
+from app.parsers.googlepay import GooglePayParser
+from app.parsers.detector import detect_parser
 
 
 def make_navi_pdf(rows: list[tuple]) -> bytes:
@@ -46,3 +49,76 @@ def test_navi_parses_multiple_rows():
     parser = NaviParser()
     txns = parser.parse(pdf_bytes)
     assert len(txns) == 2
+
+
+def make_phonepe_pdf(rows: list[tuple]) -> bytes:
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=A4)
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(50, 800, "PhonePe Transaction History")
+    c.drawString(50, 780, "Date & Time           Description                    Amount")
+    c.setFont("Helvetica", 9)
+    y = 760
+    for row in rows:
+        line = f"{row[0]}  {row[1]:<35} {row[2]}"
+        c.drawString(50, y, line)
+        y -= 15
+    c.save()
+    buf.seek(0)
+    return buf.read()
+
+
+def make_gpay_pdf(rows: list[tuple]) -> bytes:
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=A4)
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(50, 800, "Google Pay Transaction Details")
+    c.drawString(50, 780, "Date        Description                    Amount")
+    c.setFont("Helvetica", 9)
+    y = 760
+    for row in rows:
+        line = f"{row[0]}  {row[1]:<35} {row[2]}"
+        c.drawString(50, y, line)
+        y -= 15
+    c.save()
+    buf.seek(0)
+    return buf.read()
+
+
+def test_phonepe_parses_debit():
+    rows = [("14 Jan 2025 10:30", "Swiggy payment", "-320.00 Dr")]
+    pdf_bytes = make_phonepe_pdf(rows)
+    parser = PhonePeParser()
+    txns = parser.parse(pdf_bytes)
+    assert len(txns) == 1
+    assert txns[0].amount == Decimal("-320.00")
+
+
+def test_gpay_parses_debit():
+    rows = [("Jan 14, 2025", "Ola Cabs", "-150.00")]
+    pdf_bytes = make_gpay_pdf(rows)
+    parser = GooglePayParser()
+    txns = parser.parse(pdf_bytes)
+    assert len(txns) == 1
+    assert txns[0].amount == Decimal("-150.00")
+
+
+def test_detector_navi():
+    rows = [("14/01/2025", "Swiggy", "user@upi", "-200.00", "")]
+    pdf_bytes = make_navi_pdf(rows)
+    parser = detect_parser(pdf_bytes)
+    assert isinstance(parser, NaviParser)
+
+
+def test_detector_phonepe():
+    rows = [("14 Jan 2025 10:30", "Swiggy", "-200.00 Dr")]
+    pdf_bytes = make_phonepe_pdf(rows)
+    parser = detect_parser(pdf_bytes)
+    assert isinstance(parser, PhonePeParser)
+
+
+def test_detector_gpay():
+    rows = [("Jan 14, 2025", "Swiggy", "-200.00")]
+    pdf_bytes = make_gpay_pdf(rows)
+    parser = detect_parser(pdf_bytes)
+    assert isinstance(parser, GooglePayParser)
