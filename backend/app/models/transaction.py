@@ -1,5 +1,6 @@
 import uuid
 from datetime import date, datetime
+from decimal import Decimal
 
 from sqlalchemy import Date, DateTime, Index, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
@@ -15,7 +16,7 @@ class Transaction(Base):
     date: Mapped[date] = mapped_column(Date)
     description: Mapped[str] = mapped_column(Text)
     merchant: Mapped[str] = mapped_column(String(200))
-    amount: Mapped[float] = mapped_column(Numeric(12, 2))
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2))
     category: Mapped[str] = mapped_column(String(50))
     account: Mapped[str] = mapped_column(String(200))
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
