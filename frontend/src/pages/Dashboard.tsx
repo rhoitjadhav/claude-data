@@ -6,10 +6,10 @@ import FilterBar from '../components/FilterBar'
 import MonthlyChart from '../components/MonthlyChart'
 import StatsBar from '../components/StatsBar'
 import TopMerchants from '../components/TopMerchants'
-import { useFilterStore } from '../store/filterStore'
+import { useFilterParams } from "../store/filterStore"
 
 export default function Dashboard() {
-  const filters = useFilterStore(s => s.toParams())
+  const filters = useFilterParams()
 
   const summary = useQuery({ queryKey: ['summary', filters], queryFn: () => fetchSummary(filters) })
   const byCategory = useQuery({ queryKey: ['byCategory', filters], queryFn: () => fetchByCategory(filters) })

@@ -14,7 +14,7 @@ export default function CategoryChart({ data, isLoading }: Props) {
         <ResponsiveContainer width="100%" height={260}>
           <PieChart>
             <Pie data={data} dataKey="total" nameKey="category" cx="50%" cy="50%" outerRadius={90} label={({ category, percent }: { category: string; percent: number }) => `${category} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
-              {data?.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+              {data?.map((entry, i) => <Cell key={entry.category} fill={COLORS[i % COLORS.length]} />)}
             </Pie>
             <Tooltip formatter={(v: string | number) => formatCurrency(v)} />
           </PieChart>

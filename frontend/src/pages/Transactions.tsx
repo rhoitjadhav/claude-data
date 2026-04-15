@@ -2,10 +2,10 @@ import { Download } from 'lucide-react'
 import { buildExportUrl } from '../api/transactions'
 import FilterBar from '../components/FilterBar'
 import TransactionTable from '../components/TransactionTable'
-import { useFilterStore } from '../store/filterStore'
+import { useFilterParams } from "../store/filterStore"
 
 export default function Transactions() {
-  const filters = useFilterStore(s => s.toParams())
+  const filters = useFilterParams()
 
   return (
     <div>

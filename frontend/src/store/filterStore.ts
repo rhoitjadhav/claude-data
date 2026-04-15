@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { useShallow } from 'zustand/react/shallow'
 
 interface FilterState {
   category: string
@@ -33,3 +34,10 @@ export const useFilterStore = create<FilterState>((set, get) => ({
     return params
   },
 }))
+
+/** Stable selector — returns same object reference when filter values haven't changed */
+export function useFilterParams(): Record<string, string> {
+  return useFilterStore(
+    useShallow(s => s.toParams())
+  )
+}

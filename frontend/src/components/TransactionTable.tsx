@@ -1,14 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Trash2 } from 'lucide-react'
 import { deleteTransaction, fetchTransactions, updateTransaction } from '../api/transactions'
-import { useFilterStore } from '../store/filterStore'
+import { useFilterParams } from '../store/filterStore'
 import { formatCurrency } from '../lib/utils'
 
 const CATEGORIES = ['Food & Dining','Transport','Groceries','Shopping','Entertainment','Health','Utilities','Education','Finance','Uncategorized']
 
 export default function TransactionTable() {
-  const filters = useFilterStore(s => s.toParams())
+  const filters = useFilterParams()
   const qc = useQueryClient()
   const [page, setPage] = useState(0)
   const limit = 50
@@ -18,14 +18,18 @@ export default function TransactionTable() {
     queryFn: () => fetchTransactions({ ...filters, limit, offset: page * limit }),
   })
 
+  useEffect(() => { setPage(0) }, [filters])
+
   const deleteMut = useMutation({
     mutationFn: deleteTransaction,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['transactions'] }),
+    onError: () => alert('Failed to delete transaction. Please try again.'),
   })
 
   const updateMut = useMutation({
     mutationFn: ({ id, category }: { id: string; category: string }) => updateTransaction(id, { category }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['transactions'] }),
+    onError: () => alert('Failed to update category. Please try again.'),
   })
 
   if (isLoading) return <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
@@ -60,7 +64,7 @@ export default function TransactionTable() {
                 <td className="px-4 py-3 text-gray-500 text-xs">{txn.account}</td>
                 <td className="px-4 py-3">
                   <button
-                    onClick={() => deleteMut.mutate(txn.id)}
+                    onClick={() => { if (window.confirm(`Delete transaction "${txn.description}"?`)) deleteMut.mutate(txn.id) }}
                     className="text-gray-400 hover:text-red-500 transition-colors"
                   >
                     <Trash2 size={14} />
