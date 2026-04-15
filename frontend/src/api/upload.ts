@@ -15,7 +15,9 @@ export async function uploadFile(file: File, source: string): Promise<UploadJob>
   const form = new FormData()
   form.append('file', file)
   form.append('source', source)
-  const { data } = await client.post<UploadJob>('/upload', form)
+  const { data } = await client.post<UploadJob>('/upload', form, {
+    headers: { 'Content-Type': undefined },
+  })
   return data
 }
 
