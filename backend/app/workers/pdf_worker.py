@@ -38,7 +38,7 @@ async def process_pdf(ctx: dict, job_id: str, file_bytes: bytes) -> None:
                     continue
 
                 merchant = _extract_merchant(raw.description)
-                category = categorize(raw.description)
+                category = categorize(raw.description, raw.note)
 
                 txn = Transaction(
                     source=job.source,
