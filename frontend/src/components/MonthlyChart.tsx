@@ -10,7 +10,7 @@ export default function MonthlyChart({ data, isLoading }: Props) {
       <h3 className="text-sm font-semibold text-gray-700 mb-4">Monthly Spend Trend</h3>
       {isLoading ? <div className="h-64 bg-gray-100 rounded animate-pulse" /> : (
         <ResponsiveContainer width="100%" height={260}>
-          <LineChart data={data}>
+          <LineChart data={data?.map(d => ({ ...d, total: Number(d.total) }))}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis dataKey="month" tick={{ fontSize: 12 }} />
             <YAxis tick={{ fontSize: 12 }} tickFormatter={(v: number) => `₹${(v/1000).toFixed(0)}k`} />

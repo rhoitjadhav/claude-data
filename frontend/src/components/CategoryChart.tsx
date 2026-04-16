@@ -13,7 +13,7 @@ export default function CategoryChart({ data, isLoading }: Props) {
       {isLoading ? <div className="h-64 bg-gray-100 rounded animate-pulse" /> : (
         <ResponsiveContainer width="100%" height={260}>
           <PieChart>
-            <Pie data={data} dataKey="total" nameKey="category" cx="50%" cy="50%" outerRadius={90} label={({ category, percent }: { category: string; percent: number }) => `${category} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+            <Pie data={data?.map(d => ({ ...d, total: Number(d.total) }))} dataKey="total" nameKey="category" cx="50%" cy="50%" outerRadius={90} label={({ category, percent }: { category: string; percent: number }) => `${category} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
               {data?.map((entry, i) => <Cell key={entry.category} fill={COLORS[i % COLORS.length]} />)}
             </Pie>
             <Tooltip formatter={(v: string | number) => formatCurrency(v)} />
