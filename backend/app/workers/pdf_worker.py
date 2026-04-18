@@ -9,14 +9,13 @@ from app.db.session import AsyncSessionLocal
 from app.models.transaction import Transaction
 from app.models.upload_job import UploadJob
 from app.parsers.detector import detect_parser
-from app.services.categorizer import categorize
+from app.services.categorizer import categorize_batch
 from app.services.filters import should_include
 
 
 async def process_pdf(ctx: dict, job_id: str, file_bytes: bytes) -> None:
     """arq job: parse PDF, filter, categorize, persist to DB."""
     async with AsyncSessionLocal() as session:
-        # Load job
         result = await session.execute(
             select(UploadJob).where(UploadJob.id == uuid.UUID(job_id))
         )
@@ -32,20 +31,26 @@ async def process_pdf(ctx: dict, job_id: str, file_bytes: bytes) -> None:
             raw_txns = parser.parse(file_bytes)
             job.total_parsed = len(raw_txns)
 
+            # Filter first
+            filtered = [
+                raw for raw in raw_txns
+                if should_include(raw.description, raw.amount)
+            ]
+
+            # Batch categorize in one API call
+            categories = await categorize_batch(
+                [(raw.description, raw.note) for raw in filtered]
+            )
+
             saved = 0
-            for raw in raw_txns:
-                if not should_include(raw.description, raw.amount):
-                    continue
-
+            for raw, category in zip(filtered, categories):
                 merchant = _extract_merchant(raw.description)
-                category = categorize(raw.description, raw.note)
-
                 txn = Transaction(
                     source=job.source,
                     date=raw.date,
                     description=raw.description,
                     merchant=merchant,
-                    amount=abs(raw.amount),  # store as positive
+                    amount=abs(raw.amount),
                     category=category,
                     account=raw.account,
                     note=raw.note,
@@ -66,7 +71,6 @@ async def process_pdf(ctx: dict, job_id: str, file_bytes: bytes) -> None:
 
 
 def _extract_merchant(description: str) -> str:
-    """Extract a short merchant name from the description."""
     prefixes = ["payment to ", "paid to ", "transfer to ", "upi payment to "]
     lowered = description.lower()
     for prefix in prefixes:

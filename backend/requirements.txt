@@ -12,3 +12,4 @@ arq==0.26.1
 redis==5.1.1
 python-dateutil==2.9.0
 reportlab==4.2.5
+groq==0.13.0

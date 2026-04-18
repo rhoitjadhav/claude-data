@@ -8,6 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_session
 from app.models.transaction import Transaction
 from app.schemas.transaction import TransactionListResponse, TransactionResponse, TransactionUpdate
+from app.services.categorizer import categorize_batch
+
+_RECATEGORIZE_BATCH = 75
 
 router = APIRouter(prefix="/api/v1", tags=["Transactions"])
 
@@ -103,3 +106,20 @@ async def delete_transaction(
         )
     await session.delete(txn)
     await session.commit()
+
+
+@router.post("/transactions/recategorize")
+async def recategorize_transactions(
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    result = await session.execute(select(Transaction))
+    txns = result.scalars().all()
+
+    for i in range(0, len(txns), _RECATEGORIZE_BATCH):
+        batch = txns[i : i + _RECATEGORIZE_BATCH]
+        categories = await categorize_batch([(t.description, t.note) for t in batch])
+        for txn, cat in zip(batch, categories):
+            txn.category = cat
+
+    await session.commit()
+    return {"updated": len(txns)}
