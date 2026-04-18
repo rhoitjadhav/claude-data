@@ -40,7 +40,7 @@ export default function TransactionTable() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              {['Date','Description','Merchant','Amount','Category','Account',''].map(h => (
+              {['Date','Description','Note','Merchant','Amount','Category','Account',''].map(h => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
               ))}
             </tr>
@@ -50,6 +50,7 @@ export default function TransactionTable() {
               <tr key={txn.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 whitespace-nowrap text-gray-600">{txn.date}</td>
                 <td className="px-4 py-3 text-gray-900 max-w-xs truncate">{txn.description}</td>
+                <td className="px-4 py-3 text-gray-500 text-xs max-w-[160px] truncate" title={txn.note ?? ''}>{txn.note ?? '—'}</td>
                 <td className="px-4 py-3 text-gray-600">{txn.merchant}</td>
                 <td className="px-4 py-3 font-semibold text-gray-900">{formatCurrency(txn.amount)}</td>
                 <td className="px-4 py-3">
