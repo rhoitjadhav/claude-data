@@ -30,7 +30,9 @@ def build_filters(
     if end:
         conditions.append(model.date <= end)
     if search:
-        conditions.append(model.description.ilike(f"%{search}%"))
+        conditions.append(
+            model.description.ilike(f"%{search}%") | model.note.ilike(f"%{search}%")
+        )
     return conditions
 
 
