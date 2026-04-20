@@ -5,7 +5,7 @@ import { deleteTransaction, fetchTransactions, updateTransaction } from '../api/
 import { useFilterParams } from '../store/filterStore'
 import { formatCurrency } from '../lib/utils'
 
-const CATEGORIES = ['Food & Dining','Transport','Groceries','Shopping','Entertainment','Health','Utilities','Education','Finance','Uncategorized']
+const CATEGORIES = ['Food & Dining','Transport','Groceries','Shopping','Entertainment','Subscriptions','Health','Recharge','Bill','Rent','Family','Education','Finance','Uncategorized']
 
 export default function TransactionTable() {
   const filters = useFilterParams()

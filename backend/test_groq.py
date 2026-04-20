@@ -25,6 +25,7 @@ SAMPLE = [
     ("Paid to NZM BROADBAND", "Internet Recharge NZM"),
     ("Paid to PETROL PUMP", "Petrol 3720 ml"),
     ("Paid to CROMA", "Samsung Washing Machine 7 KG AI"),
+    ("Paid to Babu", "Paani Puri"),
 ]
 
 

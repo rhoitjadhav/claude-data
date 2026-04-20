@@ -2,7 +2,7 @@ import { useFilterStore } from '../store/filterStore'
 
 const CATEGORIES = [
   'Food & Dining', 'Transport', 'Groceries', 'Shopping',
-  'Entertainment', 'Health', 'Utilities', 'Education', 'Finance', 'Uncategorized',
+  'Entertainment', 'Subscriptions', 'Health', 'Recharge', 'Bill', 'Rent', 'Family', 'Education', 'Finance', 'Uncategorized',
 ]
 
 export default function FilterBar() {

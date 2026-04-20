@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 
 from groq import AsyncGroq
 
@@ -12,9 +13,12 @@ CATEGORIES = [
     "Groceries",
     "Shopping",
     "Entertainment",
+    "Subscriptions",
     "Health",
-    "Utilities",
-    "Rent & Housing",
+    "Recharge",
+    "Bill",
+    "Rent",
+    "Family",
     "Education",
     "Finance",
     "Uncategorized",
@@ -56,24 +60,37 @@ CATEGORY_RULES: dict[str, list[str]] = {
         "ac", "air conditioner", "microwave", "cooler", "fan ",
     ],
     "Entertainment": [
-        "netflix", "spotify", "prime video", "hotstar", "bookmyshow",
+        "bookmyshow", "pvr", "inox", "movie ticket", "concert",
+        "amusement", "theme park",
+    ],
+    "Subscriptions": [
+        "netflix", "spotify", "prime video", "hotstar",
         "youtube premium", "disney", "sony liv", "zee5", "apple music",
-        "gaana", "hungama", "pvr", "inox",
+        "gaana", "hungama", "subscription", "membership",
     ],
     "Health": [
         "pharmacy", "medplus", "apollo pharmacy", "1mg", "netmeds",
         "doctor", "hospital", "clinic", "dental", "lab test",
         "healthkart", "cult.fit", "gym",
     ],
-    "Utilities": [
-        "electricity", "water bill", "gas cylinder", "broadband",
+    "Recharge": [
         "jio", "airtel", "bharti airtel", "vi ", "vodafone", "idea", "bsnl",
-        "recharge", "dth", "tatasky", "dish tv", "internet", "wifi",
-        "internet recharge", "net recharge", "data recharge",
+        "recharge", "prepaid", "internet recharge", "net recharge",
+        "data recharge", "mobile recharge", "dth", "tatasky", "dish tv",
     ],
-    "Rent & Housing": [
+    "Bill": [
+        "electricity", "electric bill", "light bill", "water bill",
+        "gas cylinder", "gas bill", "broadband", "internet bill",
+        "wifi", "maintenance", "society charges", "mseb", "bescom",
+        "tata power", "adani electricity",
+    ],
+    "Rent": [
         "rent", "house rent", "room rent", "flat rent",
-        "maintenance", "society charges", "kamvali", "maid", "vamshivat voice",
+        "kamvali", "maid", "vamshivat voice",
+    ],
+    "Family": [
+        "family", "mother", "father", "parents", "brother", "sister",
+        "wife", "husband", "son", "daughter", "home expense",
     ],
     "Education": [
         "udemy", "coursera", "byju", "unacademy", "vedantu",
@@ -88,12 +105,11 @@ CATEGORY_RULES: dict[str, list[str]] = {
 }
 
 _SYSTEM = (
-    "You are a UPI transaction categorizer. Given a list of transactions, "
-    "return a JSON array of category names — one per transaction, same order.\n\n"
-    "Valid categories:\n"
-    + "\n".join(f"- {c}" for c in CATEGORIES)
-    + "\n\nReturn ONLY a JSON array like: [\"Food & Dining\", \"Transport\", ...]\n"
-    "No explanation. No markdown. Just the JSON array."
+    "Categorize UPI transactions. Output ONLY a JSON array, nothing else.\n"
+    "One category per transaction, same order as input.\n\n"
+    "Categories: " + ", ".join(f'"{c}"' for c in CATEGORIES) + "\n\n"
+    "Example output for 3 inputs: [\"Food & Dining\", \"Transport\", \"Rent\"]\n"
+    "RULES: No explanation. No markdown. No extra text. Start with [ end with ]."
 )
 
 _client: AsyncGroq | None = None
@@ -140,8 +156,14 @@ async def categorize_batch(transactions: list[tuple[str, str | None]]) -> list[s
                 {"role": "user", "content": "\n".join(lines)},
             ],
             temperature=0,
+            max_tokens=512,
         )
-        categories = json.loads(response.choices[0].message.content.strip())
+        raw = response.choices[0].message.content.strip()
+        # extract JSON array even if model adds surrounding text
+        match = re.search(r'\[.*\]', raw, re.DOTALL)
+        if not match:
+            raise ValueError(f"No JSON array in response: {raw[:200]}")
+        categories = json.loads(match.group())
 
         if isinstance(categories, list) and len(categories) == len(transactions):
             return [c if c in CATEGORIES else "Uncategorized" for c in categories]
