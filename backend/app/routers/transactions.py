@@ -2,7 +2,7 @@ import uuid
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_session
@@ -10,7 +10,7 @@ from app.models.transaction import Transaction
 from app.schemas.transaction import TransactionListResponse, TransactionResponse, TransactionUpdate
 from app.services.categorizer import categorize_batch
 
-_RECATEGORIZE_BATCH = 75
+_RECATEGORIZE_BATCH = 25
 
 router = APIRouter(prefix="/api/v1", tags=["Transactions"])
 
@@ -112,16 +112,24 @@ async def delete_transaction(
 
 @router.post("/transactions/recategorize")
 async def recategorize_transactions(
+    only_uncategorized: bool = False,
     session: AsyncSession = Depends(get_session),
 ) -> dict:
-    result = await session.execute(select(Transaction))
-    txns = result.scalars().all()
+    query = select(Transaction.id, Transaction.description, Transaction.note)
+    if only_uncategorized:
+        query = query.where(
+            (Transaction.category == None) | (Transaction.category == "Uncategorized")  # noqa: E711
+        )
+    result = await session.execute(query)
+    rows = result.all()
 
-    for i in range(0, len(txns), _RECATEGORIZE_BATCH):
-        batch = txns[i : i + _RECATEGORIZE_BATCH]
-        categories = await categorize_batch([(t.description, t.note) for t in batch])
-        for txn, cat in zip(batch, categories):
-            txn.category = cat
+    for i in range(0, len(rows), _RECATEGORIZE_BATCH):
+        batch = rows[i : i + _RECATEGORIZE_BATCH]
+        categories = await categorize_batch([(r.description, r.note) for r in batch])
+        for row, cat in zip(batch, categories):
+            await session.execute(
+                update(Transaction).where(Transaction.id == row.id).values(category=cat)
+            )
+        await session.commit()
 
-    await session.commit()
-    return {"updated": len(txns)}
+    return {"updated": len(rows)}
