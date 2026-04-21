@@ -7,7 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_session
 from app.models.transaction import Transaction
-from app.schemas.transaction import TransactionListResponse, TransactionResponse, TransactionUpdate
+from app.schemas.transaction import TransactionCreate, TransactionListResponse, TransactionResponse, TransactionUpdate
+from app.workers.pdf_worker import _extract_merchant
 from app.services.categorizer import categorize_batch
 
 _RECATEGORIZE_BATCH = 25
@@ -66,6 +67,32 @@ async def list_transactions(
         items=[TransactionResponse.model_validate(t) for t in items],
         total=total,
     )
+
+
+@router.post("/transactions", response_model=TransactionResponse, status_code=201)
+async def create_transaction(
+    payload: TransactionCreate,
+    session: AsyncSession = Depends(get_session),
+) -> TransactionResponse:
+    category = payload.category
+    if not category:
+        results = await categorize_batch([(payload.description, payload.note)])
+        category = results[0]
+
+    txn = Transaction(
+        source="manual",
+        date=payload.date,
+        description=payload.description,
+        merchant=_extract_merchant(payload.description),
+        amount=abs(payload.amount),
+        category=category,
+        account=payload.account,
+        note=payload.note,
+    )
+    session.add(txn)
+    await session.commit()
+    await session.refresh(txn)
+    return TransactionResponse.model_validate(txn)
 
 
 @router.patch("/transactions/{txn_id}", response_model=TransactionResponse)

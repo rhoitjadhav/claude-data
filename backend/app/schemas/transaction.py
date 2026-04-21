@@ -23,6 +23,15 @@ class TransactionResponse(BaseSchema):
     updated_at: datetime
 
 
+class TransactionCreate(BaseModel):
+    date: date
+    description: str
+    amount: Decimal
+    category: str | None = None
+    note: str | None = None
+    account: str = "Manual"
+
+
 class TransactionUpdate(BaseModel):
     category: str | None = None
     note: str | None = None
