@@ -7,6 +7,7 @@ from sqlalchemy import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.db.base import Base
+from app.models.lending import Lending  # noqa: F401
 from app.models.transaction import Transaction  # noqa: F401
 from app.models.upload_job import UploadJob  # noqa: F401
 
