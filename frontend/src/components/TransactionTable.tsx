@@ -25,7 +25,7 @@ export default function TransactionTable() {
   const [menuPos, setMenuPos] = useState({ top: 0, right: 0 })
   const [lendingTxn, setLendingTxn] = useState<Transaction | null>(null)
   const [lendingForm, setLendingForm] = useState({ person_name: '', note: '' })
-  const menuRef = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLTableCellElement>(null)
   const limit = 50
 
   const { data, isLoading } = useQuery({

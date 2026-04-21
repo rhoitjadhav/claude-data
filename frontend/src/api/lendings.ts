@@ -19,6 +19,7 @@ export interface LendingCreate {
   amount: number
   date: string
   note?: string
+  linked_transaction_id?: string
 }
 
 export interface LendingUpdate {
