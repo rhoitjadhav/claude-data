@@ -28,6 +28,20 @@ export interface TransactionFilters {
   offset?: number
 }
 
+export interface TransactionCreate {
+  date: string
+  description: string
+  amount: number
+  category?: string
+  note?: string
+  account?: string
+}
+
+export async function createTransaction(payload: TransactionCreate): Promise<Transaction> {
+  const { data } = await client.post('/transactions', payload)
+  return data
+}
+
 export async function fetchTransactions(filters: TransactionFilters): Promise<TransactionListResponse> {
   const { data } = await client.get('/transactions', { params: filters })
   return data
