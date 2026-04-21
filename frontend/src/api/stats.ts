@@ -33,3 +33,20 @@ export const fetchByDay = (f: StatFilters) =>
 
 export const fetchTopMerchants = (f: StatFilters, limit = 10) =>
   client.get<MerchantStat[]>('/stats/top-merchants', { params: { ...f, limit } }).then(r => r.data)
+
+export interface MonthSnapshot {
+  month_name: string
+  days_elapsed: number
+  days_left: number
+  current_total: string
+  last_month_total: string
+  pct_change: string
+  top_category: string
+  top_category_amount: string
+  top_category_pct: string
+  biggest_jump_category: string | null
+  biggest_jump_amount: string
+}
+
+export const fetchMonthSnapshot = () =>
+  client.get<MonthSnapshot>('/stats/month-snapshot').then(r => r.data)

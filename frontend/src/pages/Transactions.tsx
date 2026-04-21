@@ -6,7 +6,7 @@ import FilterBar from '../components/FilterBar'
 import TransactionTable from '../components/TransactionTable'
 import { useFilterParams } from '../store/filterStore'
 
-const CATEGORIES = ['Food & Dining','Transport','Groceries','Shopping','Entertainment','Subscriptions','Health','Recharge','Bill','Rent','Family','Education','Finance','Uncategorized']
+const CATEGORIES = ['Food & Dining','Transport','Groceries','Shopping','Entertainment','Subscriptions','Health','Recharge','Bill','Rent','Family','Household','Social Life','Lending','Education','Finance','Uncategorized']
 const today = () => new Date().toISOString().slice(0, 10)
 
 export default function Transactions() {

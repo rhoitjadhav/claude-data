@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
-import { fetchByCategory, fetchByDay, fetchByMonth, fetchSummary, fetchTopMerchants } from '../api/stats'
+import { fetchByCategory, fetchByDay, fetchByMonth, fetchMonthSnapshot, fetchSummary, fetchTopMerchants } from '../api/stats'
 import CategoryChart from '../components/CategoryChart'
 import DailyChart from '../components/DailyChart'
 import FilterBar from '../components/FilterBar'
+import MonthSnapshotTile from '../components/MonthSnapshotTile'
 import MonthlyChart from '../components/MonthlyChart'
 import StatsBar from '../components/StatsBar'
 import TopMerchants from '../components/TopMerchants'
@@ -16,11 +17,13 @@ export default function Dashboard() {
   const byMonth = useQuery({ queryKey: ['byMonth', filters], queryFn: () => fetchByMonth(filters) })
   const byDay = useQuery({ queryKey: ['byDay', filters], queryFn: () => fetchByDay(filters) })
   const topMerchants = useQuery({ queryKey: ['topMerchants', filters], queryFn: () => fetchTopMerchants(filters) })
+  const snapshot = useQuery({ queryKey: ['monthSnapshot'], queryFn: fetchMonthSnapshot })
 
   return (
     <div>
       <FilterBar />
       <StatsBar data={summary.data} isLoading={summary.isLoading} />
+      <MonthSnapshotTile data={snapshot.data} isLoading={snapshot.isLoading} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
         <CategoryChart data={byCategory.data} isLoading={byCategory.isLoading} />
         <MonthlyChart data={byMonth.data} isLoading={byMonth.isLoading} />
