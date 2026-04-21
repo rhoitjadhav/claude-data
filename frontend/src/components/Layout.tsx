@@ -1,10 +1,11 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { BarChart2, CreditCard, Upload } from 'lucide-react'
+import { BarChart2, CreditCard, HandCoins, Upload } from 'lucide-react'
 import { cn } from '../lib/utils'
 
 const nav = [
   { to: '/dashboard', label: 'Dashboard', icon: BarChart2 },
   { to: '/transactions', label: 'Transactions', icon: CreditCard },
+  { to: '/lendings', label: 'Lendings', icon: HandCoins },
   { to: '/upload', label: 'Upload', icon: Upload },
 ]
 

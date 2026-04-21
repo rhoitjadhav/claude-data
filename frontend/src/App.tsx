@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
+import Lendings from './pages/Lendings'
 import Transactions from './pages/Transactions'
 import Upload from './pages/Upload'
 
@@ -12,6 +13,7 @@ export default function App() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="transactions" element={<Transactions />} />
+          <Route path="lendings" element={<Lendings />} />
           <Route path="upload" element={<Upload />} />
         </Route>
       </Routes>
