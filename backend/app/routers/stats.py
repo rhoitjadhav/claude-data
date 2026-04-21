@@ -1,3 +1,4 @@
+import calendar
 from datetime import date
 from decimal import Decimal
 
@@ -8,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_session
 from app.models.transaction import Transaction
 from app.routers.transactions import build_filters
-from app.schemas.stats import CategoryStat, DayStat, MerchantStat, MonthStat, SummaryStats
+from app.schemas.stats import CategoryStat, DayStat, MerchantStat, MonthSnapshot, MonthStat, SummaryStats
 
 router = APIRouter(prefix="/api/v1/stats", tags=["Stats"])
 
@@ -118,6 +119,75 @@ async def by_day(
         DayStat(day=row.day, total=Decimal(str(row.total)), count=row.count)
         for row in result.all()
     ]
+
+
+@router.get("/month-snapshot", response_model=MonthSnapshot)
+async def month_snapshot(
+    session: AsyncSession = Depends(get_session),
+) -> MonthSnapshot:
+    today = date.today()
+    curr_start = today.replace(day=1)
+
+    # Same period last month
+    last_month = today.month - 1 or 12
+    last_year = today.year if today.month > 1 else today.year - 1
+    last_day = min(today.day, calendar.monthrange(last_year, last_month)[1])
+    last_start = date(last_year, last_month, 1)
+    last_end = date(last_year, last_month, last_day)
+
+    days_in_month = calendar.monthrange(today.year, today.month)[1]
+
+    async def _total(start: date, end: date) -> Decimal:
+        r = await session.execute(
+            select(func.coalesce(func.sum(Transaction.amount), 0))
+            .where(Transaction.date >= start, Transaction.date <= end)
+        )
+        return Decimal(str(r.scalar_one()))
+
+    async def _by_cat(start: date, end: date) -> dict[str, Decimal]:
+        r = await session.execute(
+            select(Transaction.category, func.sum(Transaction.amount).label("total"))
+            .where(Transaction.date >= start, Transaction.date <= end)
+            .group_by(Transaction.category)
+        )
+        return {row.category: Decimal(str(row.total)) for row in r.all()}
+
+    curr_total = await _total(curr_start, today)
+    last_total = await _total(last_start, last_end)
+    curr_cats = await _by_cat(curr_start, today)
+    last_cats = await _by_cat(last_start, last_end)
+
+    pct_change = (
+        ((curr_total - last_total) / last_total * 100).quantize(Decimal("0.1"))
+        if last_total > 0 else Decimal("0")
+    )
+
+    top_cat = max(curr_cats, key=lambda k: curr_cats[k]) if curr_cats else "—"
+    top_amt = curr_cats.get(top_cat, Decimal("0"))
+    top_pct = (top_amt / curr_total * 100).quantize(Decimal("0.1")) if curr_total > 0 else Decimal("0")
+
+    # Biggest jump: category with largest absolute increase vs last month
+    jump_cat = None
+    jump_amt = Decimal("0")
+    for cat, amt in curr_cats.items():
+        diff = amt - last_cats.get(cat, Decimal("0"))
+        if diff > jump_amt:
+            jump_amt = diff
+            jump_cat = cat
+
+    return MonthSnapshot(
+        month_name=today.strftime("%B"),
+        days_elapsed=today.day,
+        days_left=days_in_month - today.day,
+        current_total=curr_total,
+        last_month_total=last_total,
+        pct_change=pct_change,
+        top_category=top_cat,
+        top_category_amount=top_amt,
+        top_category_pct=top_pct,
+        biggest_jump_category=jump_cat,
+        biggest_jump_amount=jump_amt.quantize(Decimal("0.01")),
+    )
 
 
 @router.get("/top-merchants", response_model=list[MerchantStat])

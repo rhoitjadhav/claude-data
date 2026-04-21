@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -19,6 +20,9 @@ CATEGORIES = [
     "Bill",
     "Rent",
     "Family",
+    "Household",
+    "Social Life",
+    "Lending",
     "Education",
     "Finance",
     "Uncategorized",
@@ -102,6 +106,21 @@ CATEGORY_RULES: dict[str, list[str]] = {
         "mutual fund", "zerodha", "groww", "upstox", "angel broking",
         "ppf", "nps", "salary", "advance salary",
     ],
+    "Household": [
+        "broom", "mop", "cleaning", "detergent", "utensil", "vessel",
+        "bucket", "furniture", "curtain", "bedsheet", "pillow", "mattress",
+        "household", "home decor", "repair", "plumber", "electrician",
+        "carpenter", "pest control", "iron box", "mixer", "grinder",
+    ],
+    "Social Life": [
+        "party", "birthday", "celebration", "outing", "trip", "picnic",
+        "bar", "pub", "lounge", "club ", "wedding", "anniversary",
+        "hangout", "meet ", "reunion", "gift for", "flowers",
+        "treat", "get together",
+    ],
+    "Lending": [
+        "lend", "lending", "borrowed", "gave to", "given to",
+    ],
 }
 
 _SYSTEM = (
@@ -136,19 +155,19 @@ def _keyword_categorize(description: str, note: str | None = None) -> str:
 
 
 async def categorize_batch(transactions: list[tuple[str, str | None]]) -> list[str]:
-    """Categorize transactions — Groq first, keyword fallback on any error."""
+    """Categorize transactions — Groq first (with 1 retry), keyword fallback on failure."""
     if not transactions:
         return []
 
-    try:
-        lines = []
-        for i, (description, note) in enumerate(transactions):
-            parts = []
-            if note and note.lower() not in ("paid via navi upi", "paid via navi", "null", ""):
-                parts.append(f"Note: {note}")
-            parts.append(f"Description: {description}")
-            lines.append(f"{i+1}. {' | '.join(parts)}")
+    lines = []
+    for i, (description, note) in enumerate(transactions):
+        parts = []
+        if note and note.lower() not in ("paid via navi upi", "paid via navi", "null", ""):
+            parts.append(f"Note: {note}")
+        parts.append(f"Description: {description}")
+        lines.append(f"{i+1}. {' | '.join(parts)}")
 
+    async def _call_groq() -> list[str] | None:
         response = await _get_client().chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
@@ -159,16 +178,23 @@ async def categorize_batch(transactions: list[tuple[str, str | None]]) -> list[s
             max_tokens=512,
         )
         raw = response.choices[0].message.content.strip()
-        # extract JSON array even if model adds surrounding text
-        match = re.search(r'\[.*\]', raw, re.DOTALL)
+        match = re.search(r'\[.*]', raw, re.DOTALL)
         if not match:
             raise ValueError(f"No JSON array in response: {raw[:200]}")
-        categories = json.loads(match.group())
+        cats = json.loads(match.group())
+        if isinstance(cats, list) and len(cats) == len(transactions):
+            return [c if c in CATEGORIES else "Uncategorized" for c in cats]
+        return None
 
-        if isinstance(categories, list) and len(categories) == len(transactions):
-            return [c if c in CATEGORIES else "Uncategorized" for c in categories]
-
-    except Exception as e:
-        logger.warning("Groq categorization failed (%s), falling back to keywords", e)
+    for attempt in range(2):
+        try:
+            result = await _call_groq()
+            if result:
+                return result
+        except Exception as e:
+            logger.warning("Groq attempt %d failed (%s)%s", attempt + 1, e,
+                           ", retrying in 3s" if attempt == 0 else ", falling back to keywords")
+        if attempt == 0:
+            await asyncio.sleep(3)
 
     return [_keyword_categorize(desc, note) for desc, note in transactions]

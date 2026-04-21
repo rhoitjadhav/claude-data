@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from datetime import date
 
@@ -151,6 +152,8 @@ async def recategorize_transactions(
     rows = result.all()
 
     for i in range(0, len(rows), _RECATEGORIZE_BATCH):
+        if i > 0:
+            await asyncio.sleep(2)  # avoid Groq token-per-minute rate limit
         batch = rows[i : i + _RECATEGORIZE_BATCH]
         categories = await categorize_batch([(r.description, r.note) for r in batch])
         for row, cat in zip(batch, categories):

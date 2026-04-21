@@ -32,3 +32,17 @@ class MerchantStat(BaseModel):
     merchant: str
     total: Decimal
     count: int
+
+
+class MonthSnapshot(BaseModel):
+    month_name: str
+    days_elapsed: int
+    days_left: int
+    current_total: Decimal
+    last_month_total: Decimal
+    pct_change: Decimal
+    top_category: str
+    top_category_amount: Decimal
+    top_category_pct: Decimal
+    biggest_jump_category: str | None
+    biggest_jump_amount: Decimal
