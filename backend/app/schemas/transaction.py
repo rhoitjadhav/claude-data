@@ -40,3 +40,7 @@ class TransactionUpdate(BaseModel):
 class TransactionListResponse(BaseModel):
     items: list[TransactionResponse]
     total: int
+
+
+class BulkDeleteRequest(BaseModel):
+    ids: list[uuid.UUID]

@@ -3,12 +3,12 @@ import uuid
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select, update
+from sqlalchemy import delete as sql_delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_session
 from app.models.transaction import Transaction
-from app.schemas.transaction import TransactionCreate, TransactionListResponse, TransactionResponse, TransactionUpdate
+from app.schemas.transaction import BulkDeleteRequest, TransactionCreate, TransactionListResponse, TransactionResponse, TransactionUpdate
 from app.workers.pdf_worker import _extract_merchant
 from app.services.categorizer import categorize_batch
 
@@ -136,6 +136,18 @@ async def delete_transaction(
         )
     await session.delete(txn)
     await session.commit()
+
+
+@router.post("/transactions/bulk-delete")
+async def bulk_delete_transactions(
+    payload: BulkDeleteRequest,
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    result = await session.execute(
+        sql_delete(Transaction).where(Transaction.id.in_(payload.ids))
+    )
+    await session.commit()
+    return {"deleted": result.rowcount}
 
 
 @router.post("/transactions/recategorize")

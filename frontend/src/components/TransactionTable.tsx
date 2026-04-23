@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { HandCoins, MoreVertical, Trash2, X } from 'lucide-react'
 import { createLending } from '../api/lendings'
-import { deleteTransaction, fetchTransactions, updateTransaction, type Transaction } from '../api/transactions'
+import { bulkDeleteTransactions, deleteTransaction, fetchTransactions, updateTransaction, type Transaction } from '../api/transactions'
 import { useFilterParams } from '../store/filterStore'
 import { formatCurrency } from '../lib/utils'
 
@@ -25,6 +25,7 @@ export default function TransactionTable() {
   const [menuPos, setMenuPos] = useState({ top: 0, right: 0 })
   const [lendingTxn, setLendingTxn] = useState<Transaction | null>(null)
   const [lendingForm, setLendingForm] = useState({ person_name: '', note: '' })
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const menuRef = useRef<HTMLTableCellElement>(null)
   const limit = 50
 
@@ -34,6 +35,7 @@ export default function TransactionTable() {
   })
 
   useEffect(() => { setPage(0) }, [filters])
+  useEffect(() => { setSelectedIds(new Set()) }, [filters, page])
 
   // Close menu on outside click
   useEffect(() => {
@@ -49,6 +51,38 @@ export default function TransactionTable() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['transactions'] }),
     onError: () => alert('Failed to delete transaction. Please try again.'),
   })
+
+  const bulkDeleteMut = useMutation({
+    mutationFn: bulkDeleteTransactions,
+    onSuccess: () => {
+      setSelectedIds(new Set())
+      qc.invalidateQueries({ queryKey: ['transactions'] })
+    },
+    onError: () => alert('Failed to delete transactions. Please try again.'),
+  })
+
+  const pageIds = data?.items.map(t => t.id) ?? []
+  const allPageSelected = pageIds.length > 0 && pageIds.every(id => selectedIds.has(id))
+  const somePageSelected = pageIds.some(id => selectedIds.has(id))
+
+  const toggleAll = () => {
+    if (allPageSelected) {
+      setSelectedIds(prev => { const next = new Set(prev); pageIds.forEach(id => next.delete(id)); return next })
+    } else {
+      setSelectedIds(prev => new Set([...prev, ...pageIds]))
+    }
+  }
+
+  const toggleOne = (id: string) => {
+    setSelectedIds(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next })
+  }
+
+  const handleBulkDelete = () => {
+    const count = selectedIds.size
+    if (window.confirm(`Delete ${count} transaction${count !== 1 ? 's' : ''}? This cannot be undone.`)) {
+      bulkDeleteMut.mutate([...selectedIds])
+    }
+  }
 
   const updateMut = useMutation({
     mutationFn: ({ id, category }: { id: string; category: string }) => updateTransaction(id, { category }),
@@ -90,6 +124,15 @@ export default function TransactionTable() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th className="px-4 py-3 w-8">
+                  <input
+                    type="checkbox"
+                    checked={allPageSelected}
+                    ref={el => { if (el) el.indeterminate = somePageSelected && !allPageSelected }}
+                    onChange={toggleAll}
+                    className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                  />
+                </th>
                 {['Date','Description','Note','Merchant','Amount','Category','Account',''].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                 ))}
@@ -97,7 +140,15 @@ export default function TransactionTable() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {data?.items.map(txn => (
-                <tr key={txn.id} className="hover:bg-gray-50">
+                <tr key={txn.id} className={`hover:bg-gray-50 ${selectedIds.has(txn.id) ? 'bg-brand-50' : ''}`}>
+                  <td className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(txn.id)}
+                      onChange={() => toggleOne(txn.id)}
+                      className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                    />
+                  </td>
                   <td className="px-4 py-3 whitespace-nowrap text-gray-600">{txn.date}</td>
                   <td className="px-4 py-3 text-gray-900 max-w-xs truncate">{txn.description}</td>
                   <td className="px-4 py-3 text-gray-500 text-xs max-w-[160px] truncate" title={txn.note ?? ''}>{txn.note ?? '—'}</td>
@@ -157,6 +208,28 @@ export default function TransactionTable() {
           </div>
         )}
       </div>
+
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-gray-900 text-white px-5 py-3 rounded-full shadow-xl">
+          <span className="text-sm font-medium">{selectedIds.size} selected</span>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="text-xs text-gray-400 hover:text-white transition-colors"
+          >
+            Clear
+          </button>
+          <div className="w-px h-4 bg-gray-600" />
+          <button
+            onClick={handleBulkDelete}
+            disabled={bulkDeleteMut.isPending}
+            className="flex items-center gap-1.5 text-sm text-red-400 hover:text-red-300 disabled:opacity-50 transition-colors"
+          >
+            <Trash2 size={14} />
+            {bulkDeleteMut.isPending ? 'Deleting...' : `Delete ${selectedIds.size}`}
+          </button>
+        </div>
+      )}
 
       {/* Mark as Lending slide-in panel */}
       {lendingTxn && (

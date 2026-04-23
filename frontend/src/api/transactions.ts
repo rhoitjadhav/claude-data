@@ -56,6 +56,11 @@ export async function deleteTransaction(id: string): Promise<void> {
   await client.delete(`/transactions/${id}`)
 }
 
+export async function bulkDeleteTransactions(ids: string[]): Promise<{ deleted: number }> {
+  const { data } = await client.post('/transactions/bulk-delete', { ids })
+  return data
+}
+
 export function buildExportUrl(filters: TransactionFilters): string {
   const params = new URLSearchParams()
   if (filters.category) params.set('category', filters.category)
