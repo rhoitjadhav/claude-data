@@ -14,4 +14,5 @@ class UploadJobResponse(BaseModel):
     error: str | None
     total_parsed: int | None
     total_saved: int | None
+    total_skipped: int | None
     created_at: datetime

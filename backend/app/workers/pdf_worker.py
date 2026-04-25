@@ -1,3 +1,5 @@
+import hashlib
+import hashlib
 import os
 import uuid
 from decimal import Decimal
@@ -11,6 +13,11 @@ from app.models.upload_job import UploadJob
 from app.parsers.detector import detect_parser
 from app.services.categorizer import categorize_batch
 from app.services.filters import should_include
+
+
+def _compute_fingerprint(date: object, description: str, amount: Decimal, account: str) -> str:
+    raw = f"{date}|{description.strip().lower()}|{amount}|{account.strip().lower()}"
+    return hashlib.sha256(raw.encode()).hexdigest()
 
 
 async def process_pdf(ctx: dict, job_id: str, file_bytes: bytes) -> None:
@@ -43,23 +50,34 @@ async def process_pdf(ctx: dict, job_id: str, file_bytes: bytes) -> None:
             )
 
             saved = 0
+            skipped = 0
             for raw, category in zip(filtered, categories):
+                amount = abs(raw.amount)
+                fingerprint = _compute_fingerprint(raw.date, raw.description, amount, raw.account)
+                existing = await session.execute(
+                    select(Transaction.id).where(Transaction.fingerprint == fingerprint)
+                )
+                if existing.scalar_one_or_none():
+                    skipped += 1
+                    continue
                 merchant = _extract_merchant(raw.description)
                 txn = Transaction(
                     source=job.source,
                     date=raw.date,
                     description=raw.description,
                     merchant=merchant,
-                    amount=abs(raw.amount),
+                    amount=amount,
                     category=category,
                     account=raw.account,
                     note=raw.note,
                     raw_text=raw.raw_text,
+                    fingerprint=fingerprint,
                 )
                 session.add(txn)
                 saved += 1
 
             job.total_saved = saved
+            job.total_skipped = skipped
             job.status = "completed"
             await session.commit()
 

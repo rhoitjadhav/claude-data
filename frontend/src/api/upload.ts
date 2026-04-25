@@ -8,6 +8,7 @@ export interface UploadJob {
   error: string | null
   total_parsed: number | null
   total_saved: number | null
+  total_skipped: number | null
   created_at: string
 }
 

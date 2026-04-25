@@ -33,7 +33,10 @@ export default function UploadProgress({ jobId, onComplete }: Props) {
         <div className="text-sm text-gray-600 space-y-1">
           <p>Parsed: <strong>{job.total_parsed}</strong> rows</p>
           <p>Saved: <strong>{job.total_saved}</strong> transactions</p>
-          <p>Skipped: <strong>{(job.total_parsed ?? 0) - (job.total_saved ?? 0)}</strong> (filtered out)</p>
+          <p>Filtered: <strong>{(job.total_parsed ?? 0) - (job.total_saved ?? 0) - (job.total_skipped ?? 0)}</strong> (credits / excluded)</p>
+          {(job.total_skipped ?? 0) > 0 && (
+            <p className="text-amber-600">Skipped: <strong>{job.total_skipped}</strong> (duplicates)</p>
+          )}
         </div>
       )}
       {job.status === 'failed' && (

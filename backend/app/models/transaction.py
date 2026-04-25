@@ -2,6 +2,7 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
+import sqlalchemy as sa
 from sqlalchemy import Date, DateTime, Index, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -21,6 +22,7 @@ class Transaction(Base):
     account: Mapped[str] = mapped_column(String(200))
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
     raw_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
@@ -31,4 +33,6 @@ class Transaction(Base):
         Index("ix_transactions_category", "category"),
         Index("ix_transactions_merchant", "merchant"),
         Index("ix_transactions_source", "source"),
+        Index("uq_transactions_fingerprint", "fingerprint", unique=True,
+              postgresql_where=sa.text("fingerprint IS NOT NULL")),
     )

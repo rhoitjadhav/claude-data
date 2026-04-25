@@ -17,6 +17,7 @@ class UploadJob(Base):
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     total_parsed: Mapped[int | None] = mapped_column(Integer, nullable=True)
     total_saved: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    total_skipped: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
