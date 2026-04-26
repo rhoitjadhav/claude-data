@@ -40,6 +40,7 @@ class TransactionUpdate(BaseModel):
 class TransactionListResponse(BaseModel):
     items: list[TransactionResponse]
     total: int
+    total_amount: float
 
 
 class BulkDeleteRequest(BaseModel):

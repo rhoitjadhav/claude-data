@@ -50,10 +50,10 @@ async def list_transactions(
 ) -> TransactionListResponse:
     filters = build_filters(Transaction, category, start, end, search)
 
-    total_result = await session.execute(
-        select(func.count(Transaction.id)).where(*filters)
+    agg_result = await session.execute(
+        select(func.count(Transaction.id), func.sum(Transaction.amount)).where(*filters)
     )
-    total = total_result.scalar_one()
+    total, total_amount = agg_result.one()
 
     result = await session.execute(
         select(Transaction)
@@ -67,6 +67,7 @@ async def list_transactions(
     return TransactionListResponse(
         items=[TransactionResponse.model_validate(t) for t in items],
         total=total,
+        total_amount=float(total_amount or 0),
     )
 
 

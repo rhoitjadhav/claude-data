@@ -17,6 +17,7 @@ export interface Transaction {
 export interface TransactionListResponse {
   items: Transaction[]
   total: number
+  total_amount: number
 }
 
 export interface TransactionFilters {
