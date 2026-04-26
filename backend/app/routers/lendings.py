@@ -67,11 +67,18 @@ async def update_lending(
         )
     if payload.person_name is not None:
         lending.person_name = payload.person_name
+    if payload.amount is not None:
+        lending.amount = payload.amount
+    if payload.date is not None:
+        lending.date = payload.date
     if payload.note is not None:
         lending.note = payload.note
     if payload.amount_repaid is not None:
         lending.amount_repaid = min(payload.amount_repaid, lending.amount)
-    lending.status = _compute_status(lending.amount, lending.amount_repaid)
+    if payload.status is not None:
+        lending.status = payload.status
+    else:
+        lending.status = _compute_status(lending.amount, lending.amount_repaid)
     await session.commit()
     await session.refresh(lending)
     return LendingResponse.model_validate(lending)

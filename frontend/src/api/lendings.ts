@@ -24,7 +24,10 @@ export interface LendingCreate {
 
 export interface LendingUpdate {
   person_name?: string
+  amount?: number
   amount_repaid?: number
+  date?: string
+  status?: 'outstanding' | 'partial' | 'settled'
   note?: string
 }
 
