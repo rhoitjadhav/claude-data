@@ -26,7 +26,7 @@ export default function Dashboard() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+      <div className="mob-stack" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: C.t1, margin: 0, letterSpacing: '-0.5px' }}>Dashboard</h1>
           <p style={{ fontSize: 14, color: C.t4, margin: '4px 0 0' }}>Overview of your UPI spending activity</p>
@@ -48,7 +48,7 @@ export default function Dashboard() {
       />
 
       {/* Charts row: category (fixed) + daily (flex) */}
-      <div style={{ display: 'flex', gap: 14, alignItems: 'stretch' }}>
+      <div className="charts-row" style={{ display: 'flex', gap: 14, alignItems: 'stretch' }}>
         <CategoryChart data={byCategory.data} isLoading={byCategory.isLoading} />
         <DailyChart data={byDay.data} isLoading={byDay.isLoading} />
       </div>

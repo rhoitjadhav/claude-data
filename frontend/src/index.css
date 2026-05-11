@@ -59,3 +59,55 @@
   [data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator { filter: none; }
   select option { background: var(--surface); color: var(--t1); }
 }
+
+/* ── Mobile Responsive ──────────────────────────────────── */
+.bottom-nav { display: none; }
+
+@media (max-width: 767px) {
+  /* Prevent body-level horizontal scroll */
+  html, body { overflow-x: hidden !important; max-width: 100vw; }
+
+  /* Layout structure */
+  .sidebar         { display: none !important; }
+  .layout-root     { height: auto !important; min-height: 100dvh; max-width: 100vw; overflow-x: hidden; }
+  .layout-main     { height: auto !important; overflow: visible !important; min-width: 0 !important; }
+  .layout-content  { padding: 14px !important; padding-bottom: 78px !important; overflow-x: hidden !important; overflow-y: auto !important; }
+  .layout-header   { padding: 10px 14px !important; }
+  .bottom-nav      { display: flex !important; }
+
+  /* Responsive grid helpers — min-width:0 prevents grid blowout */
+  .mob-grid-2 { grid-template-columns: repeat(2, 1fr) !important; }
+  .mob-grid-1 { grid-template-columns: 1fr !important; }
+  .mob-grid-2 > *, .mob-grid-1 > * { min-width: 0; }
+  .mob-stack  { flex-direction: column !important; }
+
+  /* Charts row stacks on mobile */
+  .charts-row { flex-direction: column !important; }
+
+  /* FilterBar: search takes full width, hide divider on mobile */
+  .filter-row { gap: 8px !important; }
+  .filter-row .filter-divider { display: none !important; }
+  .filter-row .filter-search { flex: 1 1 100% !important; min-width: 0 !important; }
+  .filter-row .filter-cat    { flex: 1 1 auto !important; }
+
+  /* Lendings page padding */
+  .page-lendings { padding: 18px 14px !important; }
+
+  /* Month snapshot tile padding + hero amount */
+  .month-snapshot { padding: 18px 16px !important; }
+  .month-snapshot .snap-hero { font-size: 36px !important; letter-spacing: -1px !important; }
+  .month-snapshot .snap-top-row { flex-direction: column !important; gap: 8px !important; }
+
+  /* Show mobile theme toggle in header */
+  .mob-theme-btn { display: flex !important; }
+
+  /* FAB above bottom nav */
+  .txn-fab { bottom: 80px !important; }
+
+  /* Bulk delete bar above bottom nav */
+  .bulk-bar { bottom: 80px !important; }
+
+  /* Drawers/panels: full width on mobile */
+  .txn-drawer    { width: 100% !important; }
+  .lending-panel { width: 100% !important; }
+}

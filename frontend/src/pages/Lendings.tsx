@@ -291,9 +291,9 @@ export default function Lendings() {
   ]
 
   return (
-    <div style={{ padding: '32px 36px', display: 'flex', flexDirection: 'column', gap: 22 }}>
+    <div className="page-lendings" style={{ padding: '32px 36px', display: 'flex', flexDirection: 'column', gap: 22 }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+      <div className="mob-stack" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: C.t1, margin: 0, letterSpacing: '-0.5px' }}>Lendings</h1>
           <p style={{ fontSize: 14, color: C.t4, margin: '4px 0 0' }}>{lendings.length} people · track money you've lent</p>
@@ -308,7 +308,7 @@ export default function Lendings() {
       </div>
 
       {/* Stat tiles */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
+      <div className="mob-grid-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
         {STAT_TILES.map(t => (
           <div key={t.label} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 13, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14, transition: 'background .25s' }}>
             <div style={{ width: 42, height: 42, borderRadius: 11, background: t.bg, color: t.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>

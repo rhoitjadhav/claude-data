@@ -50,8 +50,10 @@ export default function Layout() {
   const { isDark, toggle } = useThemeStore()
 
   return (
-    <div style={{ display: 'flex', height: '100vh', background: C.bg }}>
-      <aside style={{ width: 220, minWidth: 220, background: C.nav, borderRight: `1px solid ${C.borderFaint}`, display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0 }}>
+    <div className="layout-root" style={{ display: 'flex', height: '100vh', background: C.bg }}>
+
+      {/* Sidebar — hidden on mobile via .sidebar CSS class */}
+      <aside className="sidebar" style={{ width: 220, minWidth: 220, background: C.nav, borderRight: `1px solid ${C.borderFaint}`, display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0 }}>
 
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '22px 20px 18px', borderBottom: `1px solid ${C.borderFaint}` }}>
@@ -130,16 +132,65 @@ export default function Layout() {
         </div>
       </aside>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <header style={{ background: C.nav, borderBottom: `1px solid ${C.border}`, padding: '14px 24px', flexShrink: 0 }}>
+      {/* Main content column */}
+      <div className="layout-main" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+        <header className="layout-header" style={{ background: C.nav, borderBottom: `1px solid ${C.border}`, padding: '14px 24px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 style={{ fontSize: 14, fontWeight: 600, color: C.t1, margin: 0 }}>
             {nav.find(n => n.to === pathname)?.label ?? 'UPI Tracker'}
           </h2>
+          {/* Theme toggle button — visible only on mobile (sidebar hidden) */}
+          <button
+            onClick={toggle}
+            className="mob-theme-btn"
+            style={{
+              display: 'none',
+              alignItems: 'center', justifyContent: 'center',
+              width: 32, height: 32, borderRadius: 8,
+              border: `1px solid ${C.borderFaint}`, background: 'transparent',
+              color: C.t4, cursor: 'pointer',
+            }}
+          >
+            {isDark ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
         </header>
-        <main style={{ flex: 1, overflow: 'auto', padding: 24 }}>
+        <main className="layout-content" style={{ flex: 1, overflow: 'auto', padding: 24 }}>
           <Outlet />
         </main>
       </div>
+
+      {/* Bottom nav — visible only on mobile via CSS */}
+      <nav
+        className="bottom-nav"
+        style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0, height: 60,
+          background: C.nav, borderTop: `1px solid ${C.borderFaint}`,
+          zIndex: 1000, alignItems: 'stretch',
+        }}
+      >
+        {nav.map(({ to, label, icon }) => {
+          const active = pathname === to
+          return (
+            <Link
+              key={to}
+              to={to}
+              style={{
+                flex: 1, display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                gap: 3, textDecoration: 'none',
+                color: active ? 'var(--accent)' : C.t4,
+                fontSize: 10, fontWeight: active ? 600 : 500,
+                background: active ? C.accentSub : 'transparent',
+                borderTop: `2px solid ${active ? 'var(--accent)' : 'transparent'}`,
+                transition: 'all .15s',
+                paddingTop: 2,
+              }}
+            >
+              <span style={{ color: active ? 'var(--accent)' : C.t4, display: 'flex' }}>{icon}</span>
+              <span>{label}</span>
+            </Link>
+          )
+        })}
+      </nav>
     </div>
   )
 }

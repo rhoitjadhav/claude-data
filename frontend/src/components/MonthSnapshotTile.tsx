@@ -21,7 +21,7 @@ export default function MonthSnapshotTile({ data, isLoading }: Props) {
     : 0
 
   return (
-    <div style={{
+    <div className="month-snapshot" style={{
       background: 'linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 60%, var(--bg)) 100%)',
       borderRadius: 16,
       padding: '28px 32px',
@@ -34,7 +34,7 @@ export default function MonthSnapshotTile({ data, isLoading }: Props) {
       <div style={{ position: 'absolute', bottom: -80, right: 80, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
 
       {/* Top row */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6, position: 'relative' }}>
+      <div className="snap-top-row" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6, position: 'relative' }}>
         <div>
           <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.6)', letterSpacing: '.08em', marginBottom: 4 }}>CURRENT MONTH SNAPSHOT</div>
           <div style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>{data.month_name} {new Date().getFullYear()}</div>
@@ -53,7 +53,7 @@ export default function MonthSnapshotTile({ data, isLoading }: Props) {
 
       {/* Hero spend */}
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, margin: '18px 0 6px', position: 'relative' }}>
-        <span style={{ ...MONO, fontSize: 52, fontWeight: 700, color: '#fff', letterSpacing: '-2px', lineHeight: 1 }}>
+        <span className="snap-hero" style={{ ...MONO, fontSize: 52, fontWeight: 700, color: '#fff', letterSpacing: '-2px', lineHeight: 1 }}>
           {formatCurrency(parseFloat(data.current_total))}
         </span>
         <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 500, paddingBottom: 4 }}>

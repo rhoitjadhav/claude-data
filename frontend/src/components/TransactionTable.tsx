@@ -6,6 +6,7 @@ import { bulkDeleteTransactions, deleteTransaction, fetchTransactions, updateTra
 import { useFilterParams } from '../store/filterStore'
 import { formatCurrency } from '../lib/utils'
 import { C, inp, MONO } from '../lib/theme'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 const CATEGORIES = ['Food & Dining','Transport','Groceries','Shopping','Entertainment','Subscriptions','Health','Recharge','Bill','Rent','Family','Household','Social Life','Lending','Education','Finance','Uncategorized']
 
@@ -66,10 +67,10 @@ export default function TransactionTable() {
   const [lendingTxn, setLendingTxn] = useState<Transaction | null>(null)
   const [lendingForm, setLendingForm] = useState({ person_name: '', note: '' })
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [editingCatId, setEditingCatId] = useState<string | null>(null)
   const [editingRowId, setEditingRowId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<{ note: string; category: string }>({ note: '', category: '' })
   const menuRef = useRef<HTMLTableCellElement>(null)
+  const isMobile = useIsMobile()
   const limit = 50
 
   const { data, isLoading } = useQuery({
@@ -177,6 +178,247 @@ export default function TransactionTable() {
     <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: C.t4, textTransform: 'uppercase', letterSpacing: '.06em', whiteSpace: 'nowrap' }}>{children}</th>
   )
 
+  if (isMobile) {
+    return (
+      <>
+        {/* Mobile: select-all header */}
+        {(data?.items.length ?? 0) > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px', marginBottom: 4 }}>
+            <input
+              type="checkbox"
+              checked={allPageSelected}
+              ref={el => { if (el) el.indeterminate = somePageSelected && !allPageSelected }}
+              onChange={toggleAll}
+              style={{ accentColor: 'var(--accent)', cursor: 'pointer', width: 16, height: 16 }}
+            />
+            <span style={{ fontSize: 12, color: C.t4, fontWeight: 500 }}>
+              {somePageSelected
+                ? `${selectedIds.size} selected`
+                : `Select all ${data?.items.length ?? ''}`}
+            </span>
+            {selectedIds.size > 0 && (
+              <button
+                onClick={() => setSelectedIds(new Set())}
+                style={{ fontSize: 12, color: C.t5, background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginLeft: 'auto' }}
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Mobile: card list */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {!data?.items.length && (
+            <div style={{ textAlign: 'center', padding: '48px 0', color: C.t5, fontSize: 14 }}>No transactions found.</div>
+          )}
+          {data?.items.map(txn => {
+            const selected = selectedIds.has(txn.id)
+            const isEditing = editingRowId === txn.id
+            const [cardMenuOpen, setCardMenuOpen] = [
+              menuOpen === txn.id,
+              (open: boolean) => setMenuOpen(open ? txn.id : null),
+            ]
+            return (
+              <div
+                key={txn.id}
+                style={{
+                  background: C.surface,
+                  border: `1px solid ${selected ? 'var(--accent)' : isEditing ? 'var(--accent)' : C.border}`,
+                  borderRadius: 12,
+                  padding: '12px 14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                  transition: 'border-color .15s',
+                }}
+              >
+                {isEditing ? (
+                  /* Edit mode */
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: C.accentL, marginBottom: 2 }}>Edit Transaction</div>
+                    <div>
+                      <div style={{ fontSize: 11, color: C.t4, fontWeight: 600, marginBottom: 4, letterSpacing: '.05em' }}>NOTE</div>
+                      <input
+                        autoFocus
+                        value={editForm.note}
+                        onChange={e => setEditForm(f => ({ ...f, note: e.target.value }))}
+                        placeholder="Add note…"
+                        style={{ ...inp, fontSize: 13 }}
+                      />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, color: C.t4, fontWeight: 600, marginBottom: 4, letterSpacing: '.05em' }}>CATEGORY</div>
+                      <select
+                        value={editForm.category}
+                        onChange={e => setEditForm(f => ({ ...f, category: e.target.value }))}
+                        style={{ ...inp, fontSize: 13, cursor: 'pointer', appearance: 'none' as const }}
+                      >
+                        {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        onClick={saveEdit}
+                        disabled={updateMut.isPending}
+                        style={{ flex: 2, padding: '9px 0', borderRadius: 8, border: 'none', background: C.grad, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: updateMut.isPending ? 0.6 : 1 }}
+                      >
+                        <Check size={13} style={{ display: 'inline', marginRight: 4 }} />Save
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        style={{ flex: 1, padding: '9px 0', borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.t3, fontSize: 13, cursor: 'pointer' }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* View mode */
+                  <>
+                    {/* Row 1: checkbox + description + amount + menu */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => toggleOne(txn.id)}
+                        style={{ accentColor: 'var(--accent)', cursor: 'pointer', marginTop: 3, flexShrink: 0 }}
+                      />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: C.t1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {txn.description}
+                        </div>
+                        {txn.note && (
+                          <div style={{ fontSize: 12, color: C.t4, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontStyle: 'italic' }}>
+                            {txn.note}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ ...MONO, fontSize: 15, fontWeight: 700, color: C.t1, flexShrink: 0 }}>
+                        {formatCurrency(txn.amount)}
+                      </div>
+                      <button
+                        onClick={() => setCardMenuOpen(!cardMenuOpen)}
+                        style={{ color: C.t4, background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0, display: 'flex' }}
+                      >
+                        <MoreVertical size={15} />
+                      </button>
+                    </div>
+
+                    {/* Row 2: date + category */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 26 }}>
+                      <span style={{ fontSize: 11, color: C.t4, ...MONO }}>{txn.date}</span>
+                      <CategoryBadge cat={txn.category} />
+                    </div>
+
+                    {/* Inline context menu */}
+                    {cardMenuOpen && (
+                      <div style={{ background: C.hover, borderRadius: 10, border: `1px solid ${C.border}`, overflow: 'hidden', marginTop: 2 }}>
+                        <button
+                          onClick={() => { startEdit(txn); setCardMenuOpen(false) }}
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', fontSize: 13, color: C.t2, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                        >
+                          <Pencil size={13} color="var(--accent)" /> Edit
+                        </button>
+                        <div style={{ height: 1, background: C.border }} />
+                        <button
+                          onClick={() => { openLendingPanel(txn); setCardMenuOpen(false) }}
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', fontSize: 13, color: C.t2, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                        >
+                          <HandCoins size={13} color="var(--accent)" /> Mark as Lending
+                        </button>
+                        <div style={{ height: 1, background: C.border }} />
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Delete "${txn.description}"?`)) {
+                              deleteMut.mutate(txn.id)
+                              setMenuOpen(null)
+                            }
+                          }}
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', fontSize: 13, color: '#f87171', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                        >
+                          <Trash2 size={13} /> Delete
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Pagination */}
+        {data && data.total > limit && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 4px', fontSize: 13, marginTop: 8 }}>
+            <span style={{ color: C.t4 }}>{page * limit + 1}–{Math.min((page + 1) * limit, data.total)} of {data.total}</span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setPage(p => p - 1)} disabled={page === 0}
+                style={{ padding: '7px 18px', border: `1px solid ${C.border}`, borderRadius: 8, background: 'transparent', color: C.t3, cursor: 'pointer', fontSize: 13, opacity: page === 0 ? 0.4 : 1 }}>Prev</button>
+              <button onClick={() => setPage(p => p + 1)} disabled={(page + 1) * limit >= data.total}
+                style={{ padding: '7px 18px', border: `1px solid ${C.border}`, borderRadius: 8, background: 'transparent', color: C.t3, cursor: 'pointer', fontSize: 13, opacity: (page + 1) * limit >= data.total ? 0.4 : 1 }}>Next</button>
+            </div>
+          </div>
+        )}
+
+        {/* Bulk action bar */}
+        {selectedIds.size > 0 && (
+          <div className="bulk-bar" style={{ position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)', zIndex: 50, display: 'flex', alignItems: 'center', gap: 12, background: C.surface, border: `1px solid ${C.border}`, color: C.t1, padding: '12px 20px', borderRadius: 99, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 13, fontWeight: 500 }}>{selectedIds.size} selected</span>
+            <button onClick={() => setSelectedIds(new Set())} style={{ fontSize: 12, color: C.t4, background: 'none', border: 'none', cursor: 'pointer' }}>Clear</button>
+            <div style={{ width: 1, height: 16, background: C.border }} />
+            <button
+              onClick={handleBulkDelete}
+              disabled={bulkDeleteMut.isPending}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#f87171', background: 'none', border: 'none', cursor: 'pointer', opacity: bulkDeleteMut.isPending ? 0.5 : 1 }}
+            >
+              <Trash2 size={14} />
+              {bulkDeleteMut.isPending ? 'Deleting...' : `Delete ${selectedIds.size}`}
+            </button>
+          </div>
+        )}
+
+        {/* Mark as Lending panel */}
+        {lendingTxn && (
+          <>
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 40 }} onClick={() => setLendingTxn(null)} />
+            <div className="lending-panel" style={{ position: 'fixed', right: 0, top: 0, height: '100%', width: 384, background: C.surface, boxShadow: '-4px 0 32px rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderBottom: `1px solid ${C.border}` }}>
+                <h3 style={{ fontSize: 14, fontWeight: 600, color: C.t1, margin: 0 }}>Mark as Lending</h3>
+                <button onClick={() => setLendingTxn(null)} style={{ color: C.t4, background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
+              </div>
+              <div style={{ flex: 1, padding: 24, display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
+                <div style={{ background: C.hover, borderRadius: 8, padding: 12, fontSize: 12, color: C.t3, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div><span style={{ color: C.t5 }}>Transaction: </span>{lendingTxn.description}</div>
+                  <div><span style={{ color: C.t5 }}>Amount: </span><span style={{ fontWeight: 600, color: C.t1, ...MONO }}>{formatCurrency(parseFloat(lendingTxn.amount))}</span></div>
+                  <div><span style={{ color: C.t5 }}>Date: </span>{lendingTxn.date}</div>
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: C.t4, fontWeight: 500, display: 'block', marginBottom: 6 }}>Person name *</label>
+                  <input value={lendingForm.person_name} onChange={e => setLendingForm(f => ({ ...f, person_name: e.target.value }))} style={inp} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: C.t4, fontWeight: 500, display: 'block', marginBottom: 6 }}>Note <span style={{ color: C.t5 }}>(optional)</span></label>
+                  <input value={lendingForm.note} onChange={e => setLendingForm(f => ({ ...f, note: e.target.value }))} placeholder="Reason for lending..." style={inp} />
+                </div>
+              </div>
+              <div style={{ padding: '16px 24px', borderTop: `1px solid ${C.border}`, display: 'flex', gap: 10 }}>
+                <button
+                  onClick={() => markLendingMut.mutate({ txn: lendingTxn, ...lendingForm })}
+                  disabled={!lendingForm.person_name || markLendingMut.isPending}
+                  style={{ flex: 1, padding: '10px 0', fontSize: 13, background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, opacity: (!lendingForm.person_name || markLendingMut.isPending) ? 0.5 : 1 }}
+                >
+                  {markLendingMut.isPending ? 'Saving...' : 'Create Lending'}
+                </button>
+                <button onClick={() => setLendingTxn(null)} style={{ padding: '10px 16px', fontSize: 13, border: `1px solid ${C.border}`, borderRadius: 8, background: 'transparent', color: C.t3, cursor: 'pointer' }}>Cancel</button>
+              </div>
+            </div>
+          </>
+        )}
+      </>
+    )
+  }
+
   return (
     <>
       <div style={{ background: C.surface, borderRadius: 12, border: `1px solid ${C.border}`, overflow: 'hidden' }}>
@@ -242,18 +484,8 @@ export default function TransactionTable() {
                         >
                           {CATEGORIES.map(c => <option key={c}>{c}</option>)}
                         </select>
-                      ) : editingCatId === txn.id ? (
-                        <select
-                          autoFocus
-                          value={txn.category}
-                          onChange={e => { updateMut.mutate({ id: txn.id, category: e.target.value }); setEditingCatId(null) }}
-                          onBlur={() => setEditingCatId(null)}
-                          style={{ background: C.inputBg, border: `1px solid var(--accent)`, borderRadius: 6, padding: '4px 8px', color: C.t1, fontSize: 12, outline: 'none', cursor: 'pointer', appearance: 'none' as const }}
-                        >
-                          {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-                        </select>
                       ) : (
-                        <CategoryBadge cat={txn.category} onClick={() => setEditingCatId(txn.id)} />
+                        <CategoryBadge cat={txn.category} />
                       )}
                     </td>
                     <td style={{ padding: '10px 16px', color: C.t4, fontSize: 12 }}>{txn.account}</td>
@@ -342,7 +574,7 @@ export default function TransactionTable() {
 
       {/* Bulk action bar */}
       {selectedIds.size > 0 && (
-        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 50, display: 'flex', alignItems: 'center', gap: 12, background: C.surface, border: `1px solid ${C.border}`, color: C.t1, padding: '12px 20px', borderRadius: 99, boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+        <div className="bulk-bar" style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 50, display: 'flex', alignItems: 'center', gap: 12, background: C.surface, border: `1px solid ${C.border}`, color: C.t1, padding: '12px 20px', borderRadius: 99, boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
           <span style={{ fontSize: 13, fontWeight: 500 }}>{selectedIds.size} selected</span>
           <button onClick={() => setSelectedIds(new Set())} style={{ fontSize: 12, color: C.t4, background: 'none', border: 'none', cursor: 'pointer' }}>Clear</button>
           <div style={{ width: 1, height: 16, background: C.border }} />
@@ -361,7 +593,7 @@ export default function TransactionTable() {
       {lendingTxn && (
         <>
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 40 }} onClick={() => setLendingTxn(null)} />
-          <div style={{ position: 'fixed', right: 0, top: 0, height: '100%', width: 384, background: C.surface, boxShadow: '-4px 0 32px rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', flexDirection: 'column' }}>
+          <div className="lending-panel" style={{ position: 'fixed', right: 0, top: 0, height: '100%', width: 384, background: C.surface, boxShadow: '-4px 0 32px rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderBottom: `1px solid ${C.border}` }}>
               <h3 style={{ fontSize: 14, fontWeight: 600, color: C.t1, margin: 0 }}>Mark as Lending</h3>
               <button onClick={() => setLendingTxn(null)} style={{ color: C.t4, background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>

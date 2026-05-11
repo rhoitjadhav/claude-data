@@ -35,7 +35,8 @@ export default function MonthlyChart({ data, isLoading }: Props) {
         <ResponsiveContainer width="100%" height={160}>
           <LineChart data={data?.map(d => ({ ...d, total: Number(d.total) }))} margin={{ top: 4, right: 16, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={grid} vertical={false} />
-            <XAxis dataKey="month" tick={{ fill: tick, fontSize: 11 }} tickLine={false} axisLine={false} />
+            <XAxis dataKey="month" tick={{ fill: tick, fontSize: 11 }} tickLine={false} axisLine={false}
+              tickFormatter={(v: string) => new Date(v + '-01').toLocaleString('default', { month: 'short' })} />
             <YAxis tick={{ fill: tick, fontSize: 11 }} tickLine={false} axisLine={false}
               tickFormatter={(v: number) => v >= 1000 ? `₹${(v/1000).toFixed(0)}k` : `₹${v}`} />
             <Tooltip content={<CustomTooltip />} />

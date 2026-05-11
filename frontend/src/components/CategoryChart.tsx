@@ -80,12 +80,12 @@ export default function CategoryChart({ data, isLoading }: Props) {
     .slice(0, 10) ?? []
 
   return (
-    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: '18px 20px', flexShrink: 0 }}>
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: '18px 20px', minWidth: 0 }}>
       <div style={{ fontSize: 14, fontWeight: 600, color: C.t2, marginBottom: 16 }}>Spending by Category</div>
       {isLoading ? (
-        <div style={{ width: 340, height: 152, background: C.hover, borderRadius: 8 }} className="animate-pulse" />
+        <div style={{ width: '100%', maxWidth: 340, height: 152, background: C.hover, borderRadius: 8 }} className="animate-pulse" />
       ) : (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
           <DonutChart data={chartData} hov={hov} setHov={setHov} size={152} thickness={21} />
           <div style={{ flex: 1 }}>
             {chartData.map((c, i) => (

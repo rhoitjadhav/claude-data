@@ -57,7 +57,7 @@ export default function Transactions() {
   return (
     <div style={{ position: 'relative' }}>
       {/* Page header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+      <div className="mob-stack" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 10 }}>
         <div>
           <h2 style={{ fontSize: 14, fontWeight: 600, color: C.t1, margin: 0 }}>All Transactions</h2>
           {summary && (
@@ -81,6 +81,7 @@ export default function Transactions() {
       {/* FAB */}
       <button
         onClick={() => setDrawerOpen(true)}
+        className="txn-fab"
         style={{ position: 'fixed', bottom: 28, right: 28, width: 52, height: 52, borderRadius: '50%', border: 'none', background: C.grad, color: '#fff', cursor: 'pointer', boxShadow: '0 4px 20px rgba(8,145,178,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9997, transition: 'transform .15s, box-shadow .15s' }}
         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.08)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 6px 28px rgba(8,145,178,0.55)' }}
         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 20px rgba(8,145,178,0.35)' }}
@@ -95,7 +96,7 @@ export default function Transactions() {
       {drawerOpen && (
         <>
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9998, backdropFilter: 'blur(2px)' }} onClick={() => setDrawerOpen(false)} />
-          <div style={{ position: 'fixed', right: 0, top: 0, height: '100%', width: 380, background: C.surface, borderLeft: `1px solid ${C.border}`, zIndex: 9999, display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 40px rgba(0,0,0,0.3)' }}>
+          <div className="txn-drawer" style={{ position: 'fixed', right: 0, top: 0, height: '100%', width: 380, background: C.surface, borderLeft: `1px solid ${C.border}`, zIndex: 9999, display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 40px rgba(0,0,0,0.3)' }}>
 
             {/* Header */}
             <div style={{ padding: '20px 24px 16px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

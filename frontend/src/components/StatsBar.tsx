@@ -1,6 +1,7 @@
 import { formatCurrency } from '../lib/utils'
 import type { SummaryStats, CategoryStat, MerchantStat } from '../api/stats'
 import { C, MONO } from '../lib/theme'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 interface Props {
   data: SummaryStats | undefined
@@ -17,18 +18,18 @@ export const CATEGORY_COLORS: Record<string, string> = {
   'Lending': '#a3e635', 'Education': '#22d3ee', 'Finance': '#6366f1', 'Uncategorized': '#94a3b8',
 }
 
-function StatCard({ label, value, sub, color, iconBg, icon }: {
-  label: string; value: React.ReactNode; sub?: string; color: string; iconBg?: string; icon: React.ReactNode
+function StatCard({ label, value, sub, color, iconBg, icon, compact }: {
+  label: string; value: React.ReactNode; sub?: string; color: string; iconBg?: string; icon: React.ReactNode; compact?: boolean
 }) {
   return (
-    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: '18px 20px' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <div style={{ minWidth: 0, flex: 1, marginRight: 10 }}>
-          <div style={{ fontSize: 12, color: C.t4, fontWeight: 500, marginBottom: 8, letterSpacing: '0.02em' }}>{label}</div>
-          <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.5px', lineHeight: 1.3, color, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
-          {sub && <div style={{ fontSize: 11.5, color: C.t5, marginTop: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</div>}
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: compact ? '14px 14px' : '18px 20px', minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6 }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontSize: compact ? 11 : 12, color: C.t4, fontWeight: 500, marginBottom: compact ? 6 : 8, letterSpacing: '0.02em' }}>{label}</div>
+          <div style={{ fontSize: compact ? 17 : 22, fontWeight: 700, letterSpacing: '-0.5px', lineHeight: 1.3, color, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
+          {sub && <div style={{ fontSize: 11, color: C.t5, marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</div>}
         </div>
-        <div style={{ width: 36, height: 36, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: iconBg ?? color + '1a', color }}>
+        <div style={{ width: compact ? 30 : 36, height: compact ? 30 : 36, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: iconBg ?? color + '1a', color }}>
           {icon}
         </div>
       </div>
@@ -61,15 +62,19 @@ const StoreIcon = () => (
 )
 
 export default function StatsBar({ data, isLoading, topCategory, topMerchant }: Props) {
+  const isMobile = useIsMobile()
+  const cols = isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)'
+  const gap = isMobile ? 10 : 14
+
   if (isLoading) return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
-      {[...Array(4)].map((_, i) => <div key={i} style={{ height: 88, background: C.surface, borderRadius: 12 }} className="animate-pulse" />)}
+    <div style={{ display: 'grid', gridTemplateColumns: cols, gap }}>
+      {[...Array(4)].map((_, i) => <div key={i} style={{ height: isMobile ? 80 : 88, background: C.surface, borderRadius: 12, minWidth: 0 }} className="animate-pulse" />)}
     </div>
   )
   if (!data) return null
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: cols, gap }}>
       <StatCard
         label="Total Spent"
         value={<span style={MONO}>{formatCurrency(data.total_spend)}</span>}
@@ -77,6 +82,7 @@ export default function StatsBar({ data, isLoading, topCategory, topMerchant }: 
         color={C.accentL}
         iconBg={C.accentSub}
         icon={<RupeeIcon />}
+        compact={isMobile}
       />
       <StatCard
         label="Total Transactions"
@@ -84,6 +90,7 @@ export default function StatsBar({ data, isLoading, topCategory, topMerchant }: 
         sub="all time"
         color="#60a5fa"
         icon={<PulseIcon />}
+        compact={isMobile}
       />
       <StatCard
         label="Top Category"
@@ -91,6 +98,7 @@ export default function StatsBar({ data, isLoading, topCategory, topMerchant }: 
         sub={topCategory ? formatCurrency(topCategory.total) : undefined}
         color="#f472b6"
         icon={<TagIcon />}
+        compact={isMobile}
       />
       <StatCard
         label="Top Merchant"
@@ -98,6 +106,7 @@ export default function StatsBar({ data, isLoading, topCategory, topMerchant }: 
         sub={topMerchant ? `${topMerchant.count} txns · ${formatCurrency(topMerchant.total)}` : undefined}
         color="#f97316"
         icon={<StoreIcon />}
+        compact={isMobile}
       />
     </div>
   )
