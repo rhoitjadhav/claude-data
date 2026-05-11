@@ -1,9 +1,9 @@
-fastapi==0.115.0
+fastapi==0.136.1
 uvicorn[standard]==0.30.6
 sqlalchemy[asyncio]==2.0.35
 asyncpg==0.29.0
 alembic==1.13.3
-pydantic==2.9.2
+pydantic>=2.11.2
 pydantic-settings==2.5.2
 python-multipart==0.0.12
 aiofiles==24.1.0
@@ -13,3 +13,5 @@ redis==5.1.1
 python-dateutil==2.9.0
 reportlab==4.2.5
 groq==0.13.0
+mistralai==2.4.2
+pytest

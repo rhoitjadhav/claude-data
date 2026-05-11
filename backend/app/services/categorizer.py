@@ -5,6 +5,7 @@ import os
 import re
 
 from groq import AsyncGroq
+from mistralai.client import Mistral
 
 logger = logging.getLogger(__name__)
 
@@ -132,6 +133,7 @@ _SYSTEM = (
 )
 
 _client: AsyncGroq | None = None
+_mistral_client: Mistral | None = None
 
 
 def _get_client() -> AsyncGroq:
@@ -139,6 +141,13 @@ def _get_client() -> AsyncGroq:
     if _client is None:
         _client = AsyncGroq(api_key=os.environ["GROQ_API_KEY"])
     return _client
+
+
+def _get_mistral_client() -> Mistral:
+    global _mistral_client
+    if _mistral_client is None:
+        _mistral_client = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+    return _mistral_client
 
 
 def _keyword_categorize(description: str, note: str | None = None) -> str:
@@ -154,47 +163,71 @@ def _keyword_categorize(description: str, note: str | None = None) -> str:
     return "Uncategorized"
 
 
-async def categorize_batch(transactions: list[tuple[str, str | None]]) -> list[str]:
-    """Categorize transactions — Groq first (with 1 retry), keyword fallback on failure."""
-    if not transactions:
-        return []
+_CHUNK_SIZE = 50
 
+
+async def _categorize_chunk(chunk: list[tuple[str, str | None]]) -> list[str]:
+    """Categorize one chunk via Mistral, keyword fallback on failure."""
     lines = []
-    for i, (description, note) in enumerate(transactions):
+    for i, (description, note) in enumerate(chunk):
         parts = []
         if note and note.lower() not in ("paid via navi upi", "paid via navi", "null", ""):
             parts.append(f"Note: {note}")
         parts.append(f"Description: {description}")
         lines.append(f"{i+1}. {' | '.join(parts)}")
 
-    async def _call_groq() -> list[str] | None:
-        response = await _get_client().chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {"role": "system", "content": _SYSTEM},
-                {"role": "user", "content": "\n".join(lines)},
-            ],
-            temperature=0,
-            max_tokens=512,
-        )
-        raw = response.choices[0].message.content.strip()
+    def _parse(raw: str) -> list[str] | None:
         match = re.search(r'\[.*]', raw, re.DOTALL)
         if not match:
-            raise ValueError(f"No JSON array in response: {raw[:200]}")
-        cats = json.loads(match.group())
-        if isinstance(cats, list) and len(cats) == len(transactions):
+            return None
+        try:
+            cats = json.loads(match.group())
+        except json.JSONDecodeError:
+            return None
+        if isinstance(cats, list) and len(cats) == len(chunk):
             return [c if c in CATEGORIES else "Uncategorized" for c in cats]
+        logger.warning("Mistral returned %d categories for %d transactions", len(cats) if isinstance(cats, list) else -1, len(chunk))
         return None
+
+    user_msg = f"Categorize exactly {len(chunk)} transactions:\n" + "\n".join(lines)
 
     for attempt in range(2):
         try:
-            result = await _call_groq()
+            response = await _get_mistral_client().chat.complete_async(
+                model="mistral-small-latest",
+                messages=[
+                    {"role": "system", "content": _SYSTEM},
+                    {"role": "user", "content": user_msg},
+                ],
+                temperature=0,
+            )
+            result = _parse(response.choices[0].message.content.strip())
             if result:
                 return result
+            logger.warning("Mistral count mismatch on attempt %d, %s", attempt + 1,
+                           "retrying" if attempt == 0 else "falling back to keywords")
         except Exception as e:
-            logger.warning("Groq attempt %d failed (%s)%s", attempt + 1, e,
-                           ", retrying in 3s" if attempt == 0 else ", falling back to keywords")
+            logger.warning("Mistral attempt %d failed: %s", attempt + 1, e)
         if attempt == 0:
             await asyncio.sleep(3)
 
-    return [_keyword_categorize(desc, note) for desc, note in transactions]
+    return [_keyword_categorize(desc, note) for desc, note in chunk]
+
+
+async def categorize_batch(transactions: list[tuple[str, str | None]]) -> list[str]:
+    """Categorize transactions in chunks — Mistral per chunk, keyword fallback on failure."""
+    if not transactions:
+        return []
+
+    results: list[str] = []
+    for i in range(0, len(transactions), _CHUNK_SIZE):
+        chunk = transactions[i:i + _CHUNK_SIZE]
+        logger.info("Categorizing chunk %d-%d of %d", i + 1, i + len(chunk), len(transactions))
+        results.extend(await _categorize_chunk(chunk))
+    return results
+
+
+class MistralAPIClient:
+    def __init__(self):
+        self._client = None
+
